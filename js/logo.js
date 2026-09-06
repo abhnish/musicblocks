@@ -2082,6 +2082,15 @@ class Logo {
                     const displayText = label ? label + ": " + value : value;
                     logo.deps.textMsg(displayText);
                 }
+                // Briefly block hotkeys so a hotkey press right after clicking
+                // this value display can't accidentally spawn a new block
+                // (#4931). Scoped to just this case, not every status message.
+                if (logo.activity) {
+                    logo.activity.valueBarVisible = true;
+                    setTimeout(() => {
+                        if (logo.activity) logo.activity.valueBarVisible = false;
+                    }, 3000);
+                }
             } else {
                 logo.deps.errorHandler("I do not know how to " + blockName + ".", blk);
             }
