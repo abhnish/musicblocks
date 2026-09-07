@@ -200,6 +200,7 @@ class Logo {
 
         // Related to running programs
         this._lastNoteTimeout = null;
+        this._valueBarTimeout = null;
         this._alreadyRunning = false;
         this._prematureRestart = false;
         this._runningBlock = null;
@@ -1303,6 +1304,12 @@ class Logo {
         // Prevent stale timeout from firing cleanup on next run.
         this._lastNoteTimeout = null;
 
+        // clearAll() above cancels the value-bar timeout without running its
+        // callback, so reset both directly to avoid valueBarVisible getting
+        // stuck true (and hotkeys stuck blocked) if a stop happens mid-window.
+        this._valueBarTimeout = null;
+        if (this.activity) this.activity.valueBarVisible = false;
+
         this._cleanupAfterCompletion();
 
         for (const arg in this.evalOnStopList) {
@@ -2087,7 +2094,11 @@ class Logo {
                 // (#4931). Scoped to just this case, not every status message.
                 if (logo.activity) {
                     logo.activity.valueBarVisible = true;
-                    setTimeout(() => {
+                    if (logo._valueBarTimeout !== null) {
+                        logo._timerManager.clearTimeout(logo._valueBarTimeout);
+                    }
+                    logo._valueBarTimeout = logo._timerManager.setTimeout(() => {
+                        logo._valueBarTimeout = null;
                         if (logo.activity) logo.activity.valueBarVisible = false;
                     }, 3000);
                 }
